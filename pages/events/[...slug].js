@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
+import Head from 'next/head'
 import { fetcher } from '../../helpers/fetcher'
 import EventList from '../../components/events/event-list'
 import ResultsTitle from '../../components/events/results-title'
@@ -28,12 +29,31 @@ function FilteredEvents(props) {
     }
   }, [data])
 
+  let pgeHeadData = (
+    <Head>
+      <title>Filtered Events</title>
+      <meta name="description" content={`A list of filtered events.`} />
+    </Head>
+  )
+
   if (!events) {
-    return <p className='center'>Loading...</p>
+    return (
+      <Fragment>
+        {pgeHeadData}
+        <p className='center'>Loading...</p>
+      </Fragment>
+    )
   }
 
   const numYear = +filterData[0]
   const numMonth = +filterData[1]
+
+  pgeHeadData = (
+    <Head>
+      <title>Filtered Events</title>
+      <meta name="description" content={`All events for ${numMonth}/${numYear}.`} />
+    </Head>
+  )
 
   if (
     isNaN(numYear) ||
@@ -41,10 +61,12 @@ function FilteredEvents(props) {
     numYear < 2020 ||
     numMonth < 0 ||
     numYear > 2050 ||
-    numMonth > 12
+    numMonth > 12 ||
+    error
   ) {
     return (
       <Fragment>
+        {pgeHeadData}
         <ErrorAlert>
           <p className='center'>Invalid filter. Please adjust your values!</p>
         </ErrorAlert>
@@ -63,6 +85,7 @@ function FilteredEvents(props) {
   if (!filteredEvents || filteredEvents.length === 0) {
     return (
       <Fragment>
+        {pgeHeadData}
         <ErrorAlert>
           <p className='center'>No events found for the chosen filter</p>
         </ErrorAlert>
@@ -77,6 +100,7 @@ function FilteredEvents(props) {
 
   return (
     <Fragment>
+      {pgeHeadData}
       <ResultsTitle date={date} />
       <EventList items={filteredEvents} />
     </Fragment>
