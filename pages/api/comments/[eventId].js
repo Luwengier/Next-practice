@@ -1,7 +1,13 @@
-// import { buildCommentPath, extractComment } from '.'
+import { MongoClient } from 'mongodb'
 
-const handler = (req, res) => {
-  // const eventId = req.query.eventId
+const handler = async (req, res) => {
+  const eventId = req.query.eventId
+
+  const uri = 'mongodb+srv://mdb21788:mdb21520@cluster0.qj6q2.mongodb.net/?retryWrites=true&w=majority'
+  const client = new MongoClient(uri)
+  await client.connect()
+  const database = client.db('events')
+
   if (req.method === 'POST') {
     const { email, name, text } = req.body
 
@@ -17,29 +23,31 @@ const handler = (req, res) => {
     }
 
     const newComment = {
-      id: new Date().toISOString(),
       email,
       name,
       text,
+      eventId,
     }
 
-    console.log(newComment)
+    const result = await database.collection('comments').insertOne(newComment)
+
+    newComment.id = result.insertedId
+
+    console.log(result)
     res.status(201).json({ message: 'Added comment.', comment: newComment })
 
   }
 
   if (req.method === 'GET') {
-    const dummyList = [
-      { id: 'c1', name: 'Max', text: 'A first comment!' },
-      { id: 'c2', name: 'Manuel', text: 'A second comment!' }
-    ]
+    const documents = await database.collection('comments')
+      .find()
+      .sort({ _id: -1 })
+      .toArray()
 
-    res.status(200).json({ comments: dummyList })
-    // const filePath = buildCommentPath()
-    // const commentsData = extractComment(filePath)
-    // const selectedComments = commentsData.filter(comment => comment.eventId === eventId)
-    // res.status(200).json({ comments: selectedComments })
+    res.status(200).json({ comments: documents })
   }
+
+  await client.close()
 }
 
 export default handler
