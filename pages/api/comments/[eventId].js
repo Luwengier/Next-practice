@@ -1,9 +1,11 @@
 import { MongoClient } from 'mongodb'
+import 'dotenv/config'
 
 const handler = async (req, res) => {
   const eventId = req.query.eventId
+  console.log(process.env)
 
-  const uri = 'mongodb+srv://mdb21788:mdb21520@cluster0.qj6q2.mongodb.net/?retryWrites=true&w=majority'
+  const uri = process.env.DATA_URI
   const client = new MongoClient(uri)
   await client.connect()
   const database = client.db('events')
@@ -40,7 +42,7 @@ const handler = async (req, res) => {
 
   if (req.method === 'GET') {
     const documents = await database.collection('comments')
-      .find()
+      .find({ eventId: eventId })
       .sort({ _id: -1 })
       .toArray()
 
