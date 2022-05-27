@@ -1,6 +1,19 @@
 import { MongoClient } from 'mongodb'
 
 
+const connectDatabase = async () => {
+  const uri = process.env.DATA_URI
+  const client = new MongoClient(uri)
+  await client.connect()
+
+  return client
+}
+
+const insertDocument = async (client, document) => {
+  const database = client.db('events')
+  await database.collection('newsletter').insertOne(document)
+}
+
 const handler = async (req, res) => {
 
   if (req.method === 'POST') {
@@ -11,17 +24,24 @@ const handler = async (req, res) => {
       return
     }
 
-    const uri = process.env.DATA_URI
-    const client = new MongoClient(uri)
-    try {
-      await client.connect()
-      const database = client.db('events')
-      await database.collection('newsletter').insertOne({ email: email })
+    let client
 
-      res.status(201).json({ message: 'Success!' })
-    } finally {
-      await client.close()
+    try {
+      client = await connectDatabase()
+    } catch (error) {
+      res.status(500).json({ message: 'Connect to the database failed!' })
+      return
     }
+
+    try {
+      await insertDocument(client, { email: email })
+      await client.close()
+    } catch (error) {
+      res.status(500).json({ message: 'Inserting data failed!' })
+      return
+    }
+
+    res.status(201).json({ message: 'Success!' })
 
   }
 }
